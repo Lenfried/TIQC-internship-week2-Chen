@@ -1,13 +1,24 @@
-"use client"
-
 import Link from "next/link"
-import { useAuth } from "@/lib/auth-context"
+import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { GitHubIcon } from "@/components/icons"
-import { Code2, LogOut } from "lucide-react"
+import { Code2 } from "lucide-react"
 
-export function Header() {
-  const { user, signOut } = useAuth()
+export async function Header() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  const avatarUrl =
+    user?.user_metadata?.avatar_url ||
+    (user ? `https://api.dicebear.com/9.x/notionists/svg?seed=${user.id}` : null)
+
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.user_name ||
+    user?.email ||
+    "User"
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-md">
@@ -21,22 +32,16 @@ export function Header() {
 
         <nav className="flex items-center gap-4">
           {user ? (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <img
-                  src={user.avatar || "/placeholder.svg"}
-                  alt={`${user.name}'s avatar`}
-                  className="h-8 w-8 rounded-full border border-border"
-                />
-                <span className="hidden text-sm font-medium text-foreground sm:inline-block">
-                  {user.name}
-                </span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={signOut}>
-                <LogOut className="h-4 w-4" />
-                <span className="sr-only">Sign out</span>
-              </Button>
-            </div>
+            <Link href="/dashboard" className="flex items-center gap-3">
+              <img
+                src={avatarUrl || ""}
+                alt={`${displayName}'s avatar`}
+                className="h-8 w-8 rounded-full border border-border"
+              />
+              <span className="hidden text-sm font-medium text-foreground sm:inline-block">
+                {displayName}
+              </span>
+            </Link>
           ) : (
             <div className="flex items-center gap-3">
               <Link href="/login">

@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -10,26 +11,23 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { GitHubIcon } from "@/components/icons"
-import { Code2, LogOut, GitBranch, Star, Activity } from "lucide-react"
+import { Code2, LogOut, Shield, User, Mail } from "lucide-react"
 
-const DEMO_USER = {
-  name: "Jane Developer",
-  login: "janedev",
-  avatar: "https://api.dicebear.com/9.x/notionists/svg?seed=janedev",
-  email: "jane@example.com",
+type UserData = {
+  name: string
+  login: string
+  avatar: string
+  email: string
 }
 
-const stats = [
-  { label: "Repositories", value: "42", icon: GitBranch },
-  { label: "Stars Earned", value: "128", icon: Star },
-  { label: "Contributions", value: "1,247", icon: Activity },
-]
-
-export function DashboardContent() {
+export function DashboardContent({ user }: { user: UserData }) {
   const router = useRouter()
 
-  function handleSignOut() {
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
     router.push("/")
+    router.refresh()
   }
 
   return (
@@ -45,18 +43,20 @@ export function DashboardContent() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <Code2 className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold text-foreground">DevFlow</span>
+            <span className="text-lg font-semibold text-foreground">
+              DevFlow
+            </span>
           </button>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3">
               <img
-                src={DEMO_USER.avatar || "/placeholder.svg"}
-                alt={`${DEMO_USER.name}'s avatar`}
+                src={user.avatar || "/placeholder.svg"}
+                alt={`${user.name}'s avatar`}
                 className="h-8 w-8 rounded-full border border-border"
               />
               <span className="hidden text-sm font-medium text-foreground sm:inline-block">
-                {DEMO_USER.name}
+                {user.name}
               </span>
             </div>
             <Button variant="ghost" size="sm" onClick={handleSignOut}>
@@ -72,33 +72,16 @@ export function DashboardContent() {
         <div className="mx-auto max-w-6xl px-6">
           {/* Welcome */}
           <div className="mb-10">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Welcome back, {DEMO_USER.name}
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl text-balance">
+              Welcome back, {user.name}
             </h1>
             <p className="mt-2 text-muted-foreground">
-              Here is an overview of your GitHub activity and account.
+              You are signed in via GitHub OAuth. Here is your account overview.
             </p>
           </div>
 
-          {/* Stats */}
-          <div className="mb-10 grid gap-6 sm:grid-cols-3">
-            {stats.map((stat) => (
-              <Card key={stat.label} className="border-border">
-                <CardContent className="flex items-center gap-4 p-6">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <stat.icon className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                    <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
           {/* Profile card */}
-          <Card className="border-border">
+          <Card className="mb-8 border-border">
             <CardHeader>
               <CardTitle className="text-foreground">Your Profile</CardTitle>
               <CardDescription>
@@ -108,29 +91,64 @@ export function DashboardContent() {
             <CardContent>
               <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
                 <img
-                  src={DEMO_USER.avatar || "/placeholder.svg"}
-                  alt={`${DEMO_USER.name}'s avatar`}
+                  src={user.avatar || "/placeholder.svg"}
+                  alt={`${user.name}'s avatar`}
                   className="h-20 w-20 rounded-full border-2 border-border"
                 />
                 <div className="flex flex-col gap-3">
                   <div>
-                    <p className="text-lg font-semibold text-foreground">{DEMO_USER.name}</p>
+                    <p className="text-lg font-semibold text-foreground">
+                      {user.name}
+                    </p>
                     <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                       <GitHubIcon className="h-4 w-4" />
-                      <span>@{DEMO_USER.login}</span>
+                      <span>@{user.login}</span>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground">{DEMO_USER.email}</p>
+                  {user.email && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      <span>{user.email}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Demo notice */}
-          <div className="mt-8 rounded-lg border border-border bg-muted/50 px-6 py-4 text-center">
-            <p className="text-sm text-muted-foreground">
-              This is a demo dashboard. Connect a real GitHub OAuth integration to see live data.
-            </p>
+          {/* Info cards */}
+          <div className="grid gap-6 sm:grid-cols-2">
+            <Card className="border-border">
+              <CardContent className="flex items-center gap-4 p-6">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <Shield className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">
+                    Authenticated
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Signed in securely via GitHub OAuth
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border">
+              <CardContent className="flex items-center gap-4 p-6">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">
+                    Profile Synced
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Your GitHub profile data is up to date
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>

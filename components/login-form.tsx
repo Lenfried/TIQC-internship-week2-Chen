@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -18,14 +18,25 @@ import { Code2, Loader2, ArrowLeft } from "lucide-react"
 
 export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [error, setError] = useState<string | null>(null)
 
-  function handleGitHubLogin() {
+  async function handleGitHubLogin() {
     setIsLoading(true)
-    // Simulate OAuth redirect delay, then go to dashboard
-    setTimeout(() => {
-      router.push("/dashboard")
-    }, 1500)
+    setError(null)
+
+    const supabase = createClient()
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      setError(error.message)
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -84,6 +95,10 @@ export function LoginForm() {
             )}
             {isLoading ? "Redirecting to GitHub..." : "Continue with GitHub"}
           </Button>
+
+          {error && (
+            <p className="text-center text-sm text-destructive">{error}</p>
+          )}
 
           <div className="flex items-center gap-3">
             <Separator className="flex-1" />
