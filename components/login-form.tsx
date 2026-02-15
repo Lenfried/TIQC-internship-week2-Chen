@@ -25,13 +25,18 @@ export function LoginForm() {
     setError(null)
 
     const supabase = createClient()
+    const redirectTo = `${window.location.origin}/auth/callback`
+    console.log("[v0] handleGitHubLogin - window.location.origin:", window.location.origin)
+    console.log("[v0] handleGitHubLogin - redirectTo:", redirectTo)
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo,
       },
     })
+
+    console.log("[v0] signInWithOAuth error:", error)
 
     if (error) {
       setError(error.message)
